@@ -1,0 +1,1 @@
+# check construction of L2Loss function and data/labels part! Find why gradient seems to be 1-dim when it should be 2 dim
