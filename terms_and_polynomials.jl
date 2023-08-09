@@ -1,6 +1,92 @@
 using LinearAlgebra
 using SparseArrays
-using FromFile
+
+"""
+Creates and keeps track of sets O and G for OAVI.
+"""
+mutable struct SetsOandG
+    
+# border terms before purging by degree
+border_terms_raw
+# evaluations of border_terms_raw over X by degree
+border_evaluations_raw
+# border terms after purging by degree
+border_terms_purged
+# evaluations of border_terms_purged over X by degree
+border_evaluations_purged
+# indices such that border_terms_raw[i][non_purging_indices[i], :] = border_terms_purged[i]
+non_purging_indices   
+
+# array of O terms by degree
+O_terms
+# array of evaluation of O terms over X by degree
+O_evaluations
+# indices in the border that get appended to O
+O_indices
+
+# sets for vanishing polynomials
+G_coefficient_vectors
+G_evaluations
+
+# leading terms
+leading_terms
+    
+end
+
+
+"""
+updates border sets
+"""
+function update_border(sets, border_terms_raw, border_evaluations_raw, non_purging_indices)
+    sets.non_purging_indices = append!(sets.non_purging_indices, non_purging_indices)
+    sets.border_terms_raw = append!(sets.border_terms_raw, border_terms_raw)
+    sets.border_evaluations_raw = append!(sets.border_evaluations_raw)
+    sets.border_terms_purged = append!(sets.border_terms_purged, border_terms_raw[:, non_purging_indices])
+    sets.border_evaluations_purged = append!(sets.border_evaluations_purged, border_evaluations_raw[:, non_purging_indices])
+end    
+
+
+"""
+updates O sets
+"""
+function update_O(sets, O_terms, O_evaluations, O_indices)
+    sets.O_terms = hcat(sets.O_terms, O_terms)
+    sets.O_evaluations = hcat(sets.O_evaluations, O_evaluations)
+    sets.O_indices = append!(sets.O_indices, O_indices)
+end
+
+
+"""
+updates G sets
+"""
+function update_G(sets, G_coefficient_vectors=nothing)
+    if G_coefficient_vectors != nothing
+        if size(sets.G_evluations, 2) == 0
+            sets.G_evaluations = hcat(sets.O_evaluations, sets.border_evaluations_purged[end] * G_coefficient_vectors)
+        else
+            current_G_evaluations = hcat(sets.O_evaluations, sets.border_evaluations_purged[end] * G_coefficient_vectors)
+            sets.G_evaluations = hcat(sets.G_evaluations, current_G_evaluations)
+        end
+    end
+    sets.G_coefficient_vectors = append!(sets.G_coefficient_vectors, G_coefficient_vectors)
+end
+
+
+"""
+updates leading terms
+"""
+function update_leading_terms(sets, leading_terms=nothing)
+    if sets.leading_terms == nothing
+        if leading_terms != nothing
+            sets.leading_terms = leading_terms
+        end
+    else
+        sets.leading_terms = hcat(sets.leading_terms, leading_terms)
+    end
+end
+
+
+
 
 """
 constructs the border of 'terms'

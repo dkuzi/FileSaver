@@ -4,15 +4,21 @@ using LinearAlgebra
 creates and returns f and grad(f) for the L2-loss
 
 TODO: Look at 'call_oracle' and adjust accordingly! Maybe do 'L2Loss' as struct with constructor to construct it
--> function takes data, labels, lmbda as input and creates struct with necessary values + functions.
+-> function takes data, labels, lmbda as input and creates struct with necessary values and functions.
 
 # Arguments
-- 'data::
+- 'data::Matrix{Float64}': (m, n)-Matrix of data
+- 'labels::Vector{Float64}': m-dim vector of labels
+- 'lmbda::Union{Float64, Int64}': regularization parameter (optional, default is 0.0)
+- 'data_squared::Matrix{Float64}': data' * data (optional, default is nothing)
+- 'data_labels::Vector{Float64}': data' * labels (optional, default is nothing)
+- 'labels_squared::Union{Matrix{Float64}, Matrix{Int64}, Float64, Int64}': labels' * labels (optional, default is nothing)
+- 'data_squared_inverse::Matrix{Float64}': inverse of data_squared (optional, default is nothing)
 """
 function construct_L2Loss(
     data::Matrix{Float64},
     labels::Vector{Float64};
-    lmbda=0.0,
+    lmbda::Union{Float64, Int64}=0.0,
     data_squared=nothing,
     data_labels=nothing,
     labels_squared=nothing,
