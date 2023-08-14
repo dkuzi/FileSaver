@@ -66,7 +66,7 @@ If optional parameter 'arr_is_col' = 1 convert arrays into columns instead of ro
 function vecvec_to_mat(A, arr_is_col::Int64=0)
     elem_type = eltype(A[1])
     A_mat = zeros(elem_type, length(A), length(A[1]))
-    for i in eachindex(A)
+    @inbounds for i in eachindex(A)
         A_mat[i, :] = A[i]
     end
     
@@ -88,9 +88,45 @@ tiles each column in A k-times
 """
 function tile(A, k)
     tile_A = zeros(size(A, 1), 0)
-    for i in 1:size(A, 2)
+    @inbounds for i in 1:size(A, 2)
         tile_Ai = reshape(repeat(A[:, i], k), size(A, 1), k)
         tile_A = hcat(tile_A, tile_Ai)
     end
     return tile_A
 end                            
+
+
+"""
+Finds last non-zero entry in each column and returns a list of the indices.
+In case of a zero-column returns last index.
+"""
+function find_last_non_zero_entries(matrix::Matrix)
+    indices = Array{Int64}([])
+    @inbounds for a in eachcol(matrix)
+        idx = []
+        @inbounds for i in eachindex(a)
+            if a[i] != 0
+                push!(idx, i)
+            end
+        end
+        if length(idx) > 0
+            indices = append!(indices, idx[end])
+        else
+            indices = append!(indices, length(a))
+        end
+    end
+    return indices
+end
+    
+    
+"""
+Finds first non-zero entry in each column and returns a list of the indices.
+In case of a zero-column returns first index.
+"""
+function find_first_non_zero_entries(matrix::Matrix)
+    indices = Array{Int64}([])
+    @inbounds for a in eachcol(matrix)
+        indices = append!(indices, findmax(a)[2])
+    end
+    return indices
+end
