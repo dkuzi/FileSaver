@@ -1,2 +1,0 @@
-# check construction of L2Loss function and data/labels part! 
-# compare with construct border -> evaluation should be [[term[1](x1), term[2](x1), ..., term[k](x1)], [term[1](x2), ..., term[k](x2)], ...]
