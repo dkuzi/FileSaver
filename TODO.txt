@@ -1,3 +1,5 @@
+# check construction of L2Loss -> data + labels part should follow construct_border evaluation
+
 streaming_matrix_updates hat anscheinend ein Problem. 
 Eigentlich funktioniert alles wie im Python code, aber Normdifferenz der Inversen ist nur im 1.0e-5 Bereich,
 statt 1.0e-k, k >= 8. k=5 schon bisschen significant
