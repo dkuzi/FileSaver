@@ -190,6 +190,33 @@ end
 
 
 """
+Appends polynomial with coefficient vector based on coefficient_vector and term to G_coefficient_vectors.
+"""
+function update_coefficient_vectors(G_coefficient_vectors, coefficient_vector; first=false)
+    if G_coefficient_vectors == nothing
+        G_coefficient_vectors = coefficient_vector
+    else
+        if first
+            lt_indices = find_first_non_zero_entries(G_coefficient_vectors)
+        else
+            lt_indices = find_last_non_zero_entries(G_coefficient_vectors)
+        end
+        
+        removable_set = Set(lt_indices)
+        
+        indices = [x for x in 1:size(G_coefficient_vectors, 1) if x ∉ removable_set]
+        
+        if length(indices) == size(coefficient_vector, 1)
+            updated_coefficient_vector = zeros(size(G_coefficient_vectors, 1), 1)
+            updated_coefficient_vector[indices, :] = coefficient_vector
+            G_coefficient_vectors = hcat(G_coefficient_vectors, updated_coefficient_vector)
+        end
+    end
+    return G_coefficient_vectors
+end
+
+
+"""
 Calls ORACLE for computing coefficient vector
 
 # Arguments

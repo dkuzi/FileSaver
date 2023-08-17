@@ -1,7 +1,7 @@
 using LinearAlgebra
 
 """
-creates and returns f and grad(f) for the L2-loss
+creates L2Loss matrices and vectors and returns f and grad(f) for the L2-loss
 
 TODO: Look at 'call_oracle' and adjust accordingly! Maybe do 'L2Loss' as struct with constructor to construct it
 -> function takes data, labels, lmbda as input and creates struct with necessary values and functions.
@@ -88,7 +88,7 @@ function construct_L2Loss(
     
 end
 
-struct L2Loss
+mutable struct L2Loss
     A
     A_squared
     A_b
