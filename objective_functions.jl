@@ -14,6 +14,11 @@ TODO: Look at 'call_oracle' and adjust accordingly! Maybe do 'L2Loss' as struct 
 - 'data_labels::Vector{Float64}': data' * labels (optional, default is nothing)
 - 'labels_squared::Union{Matrix{Float64}, Matrix{Int64}, Float64, Int64}': labels' * labels (optional, default is nothing)
 - 'data_squared_inverse::Matrix{Float64}': inverse of data_squared (optional, default is nothing)
+
+# Returns
+- 'L2Loss': mutable struct containing data for L2 loss function
+- 'evaluate_function': L2 loss function for current state of data
+- 'evaluate_gradient!': gradient of evaluate_function, formatted for FrankWolfe package
 """
 function construct_L2Loss(
     data::Matrix{Float64},
@@ -51,7 +56,6 @@ function construct_L2Loss(
         A_b = reshape(A_b, n, 1)
     end
     
-    
     # A_squared_inv
     A_squared_inv = nothing
     solution = nothing
@@ -84,14 +88,19 @@ function construct_L2Loss(
         return storage .= A_squared * x + A_b
     end
 
-    return L2Loss(A, A_squared, A_b, b_squared, A_squared_inv, solution), evaluate_function, evaluate_gradient!
+    return L2Loss(A, A_squared, A_b, b, b_squared, A_squared_inv, solution), evaluate_function, evaluate_gradient!
     
 end
 
+
+"""
+Saves data for current state of the algorithm.
+"""
 mutable struct L2Loss
     A
     A_squared
     A_b
+    b
     b_squared
     A_squared_inv
     solution    

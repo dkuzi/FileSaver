@@ -1,18 +1,5 @@
-# check construction of L2Loss -> data + labels part should follow construct_border evaluation
+# nächster Schritt: ABM implementieren -> schauen ob in gleichen Code oder separat
+	-> ABM ist eigenvektoren finden
+# einlesen in ABM und dann schauen
 
-streaming_matrix_updates hat anscheinend ein Problem. 
-Eigentlich funktioniert alles wie im Python code, aber Normdifferenz der Inversen ist nur im 1.0e-5 Bereich,
-statt 1.0e-k, k >= 8. k=5 schon bisschen significant
-
-implement inverse hessian boosting!
-
-für inverse hessian boosting:
-- implement projection
-- look at how to save 'solution' -> mutable struct L2Loss
-- put into algorithm
-- end
-
-misc. Sachen:
-- construct border mit X_train als Matrix oder Union{Matrix, Vector{Vector}} schreiben 
-	-> soll als Matrix dann gemacht werden wegen evaluations
-- kleines beispiel für einen run machen, maybe noch mit python vergleichen
+# call_oracle: L2 data übergeben und oracle call komplett in der function 'call_oracle' machen. Siehe Python code!
