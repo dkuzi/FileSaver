@@ -2,7 +2,7 @@
 Creates OAVI feature transformation fitted to X_train
 
 # Arguments
-- 'X_train::Vector{Vector{Float64}}': training data
+- 'X_train::Union{Matrix{Float64}, Vector{Vector{Float64}}}': training data
 - 'max_degree::Int64': max degree of polynomials computed (default 10)
 - 'psi::Float64': vanishing extent (default 0.1)
 - 'epsilon::Float64': accuracy for convex optimizer (default 0.001)
@@ -159,34 +159,4 @@ function fit(X_train::Union{Matrix{Float64}, Vector{Vector{Float64}}};
     
     return X_train_transformed, sets
     
-end
-    
-    
-"""
-Projects x onto the L1 Ball with radius 'radius'.
-
-Reference: 
-"Efficient Projections onto the ℓ1-Ball for Learning in High Dimensions", https://stanford.edu/~jduchi/projects/DuchiShSiCh08.pdf
-"""
-function l1_projection(x; radius=1.)
-    @assert radius > 0 "Radius must be positive."
-    
-    if norm(x, 1) <= radius
-        return x
-    end
-    
-    n = size(x, 1)
-    x = reshape(x, n, 1)
-    v = abs.(x)
-    u = sort(v, dims=1)
-    u = reverse(u)
-    
-    csum = cumsum(u, dims=1)
-    
-    p = findlast(u .* collect(1:n) .> csum .- radius)[1]
-    
-    theta = (1 / p) * (csum[p] - radius)
-    
-    w = reshape([max(v[i]-theta, 0) for i in 1:size(v, 1)], n, 1)
-    return sign.(x) .* w
 end

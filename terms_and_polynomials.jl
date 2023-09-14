@@ -1,7 +1,4 @@
 using LinearAlgebra
-using SparseArrays
-
-# SET CONSTRUCTION AND MAINTENANCE
 
 """
 Creates and keeps track of sets O and G for OAVI.
@@ -224,86 +221,4 @@ function purge(terms::Matrix{Int64}, terms_evaluated::Matrix{Float64}, purging_t
     
     indices = deleteat!(indices, purging_indices)
     return terms[:, indices], terms_evaluated[:, indices], indices
-end
-
-
-#--------------------------------------------------------------------------------------------------------
-# AVI MATRICES UPDATES
-
-
-"""
-Given A, A.T.A and (A.T.A)^-1 efficiently compute B = [A, a], B.T.B and (B.T.B)^-1.
-Necessary for fast inverse hessian boosting.
-
-"""
-function streaming_matrix_updates(A, A_squared, A_a, a, a_squared; A_squared_inv=nothing, built_in::Bool=false)
-    B_squared_inv = nothing
-
-    if built_in
-        B = hcat(A, a)
-        B_squared = B' * B
-        if A_squared_inv != nothing
-            B_squared_inv = inv(B_squared)
-        end
-    else
-        B = hcat(A, a)
-
-        b = A_a
-
-        B_squared = hcat(A_squared, b)
-        B_squared = vcat(B_squared, vcat(b, a_squared)')
-
-        if A_squared_inv != nothing 
-            # write B_squared_inv as S = | S_1, s_2|
-            #                            | s_2.T s_3|
-
-            A_squared_inv_b = A_squared_inv * b
-            b_A_squared_inv_b = (b' * A_squared_inv_b)[1]
-
-            s_2 = A_squared_inv + ((A_squared_inv_b * A_squared_inv_b') ./ (a_squared - b_A_squared_inv_b))
-            s_2 = (s_2 * b) ./ a_squared
-
-            s_3 = (1 - (b' * s_2)[1]) / a_squared
-
-            S_1 = A_squared_inv - (A_squared_inv_b * s_2')
-
-            B_squared_inv = hcat(S_1, s_2)
-            B_squared_inv = vcat(B_squared_inv, vcat(s_2, s_3)')            
-        end
-    end
-
-    return B, B_squared, B_squared_inv
-    
-end
-
-
-#---------------------------------------------------------------------------------------
-# ORACLE
-
-
-"""
-Calls ORACLE for computing coefficient vector
-
-# Arguments
-- 'oracle::String': Name of ORACLE to use
-- 'f': function to optimize
-- 'grad': gradient of f
-- 'feasible_region': feasible region over which to optimize for coefficient vector
-- 'initial_point::Vector{Float64}': starting point; must be in feasible_region
-
-# Returns
-- 'x_opt::Vector{Float64}': coefficient vector minimizing f over feasible_region
-"""
-function call_oracle(f, grad, feasible_region, initial_point::Vector{Float64}; oracle::String="BPCG")
-    if oracle == "CG"
-        x_opt, _ = frank_wolfe(f, grad, feasible_region, initial_point)
-    elseif oracle == "BCG"
-        x_opt, _ = blended_conditional_gradient(f, grad, feasible_region, initial_point)
-    elseif oracle == "BPCG"
-        x_opt, _ = FrankWolfe.blended_pairwise_conditional_gradient(f, grad, feasible_region, initial_point)
-    else
-        println("Oracle not implemented.")
-        return nothing
-    end
-    return x_opt
 end
