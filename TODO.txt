@@ -1,5 +1,21 @@
-# nächster Schritt: ABM implementieren -> schauen ob in gleichen Code oder separat
-	-> ABM ist eigenvektoren finden
-# einlesen in ABM und dann schauen
+# datasets ausprobieren:
+    - Kreis (x^2 + y^2 = 1)
+    - Parabel 
+    - datasets aus Paper
+    
+# test objective function
 
-# call_oracle: L2 data übergeben und oracle call komplett in der function 'call_oracle' machen. Siehe Python code!
+# Julia Keyword pass vs. function pass:
+    - String für built-in constructor vs. eigenen constructor passen
+    - oracle_type in oracle_constructor umbenennen und dann oracle_constructor::Union{String, <:Function} haben -> erlaubt eigene constructors zu übergeben. Eigene constructors müssen **mindestens** mit 'data' und 'labels' funktionieren
+    
+
+# solver argument passes via unpacking tuple, e.g.:
+    - f(x, y) = x + y -> a = (1, 2) -> f(a...) == 3. Also works on single argument.
+    - banger, um eigene solver zuzulassen!
+    - funktioniert super für kwargs, e.g.: kwargs::Vector{Tuple{Symbol, Any}} = [(:epsilon, 0.001), (:max_iteration, 10000)]
+        -> oracle.solver(varargs...; kwargs...) wäre cool. Vector mit varargs erstellen und vector mit kwargs erstellen und so passen
+    
+    -> das ganze in oracle_avi.fit einbauen, mit IHB
+
+# optimales Tau im Paper raussuchen und einbauen

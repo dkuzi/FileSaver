@@ -1,97 +1,41 @@
 """
-Struct for Conditional-Gradients based oracle.
-
-# Fields
-- 'solution::Union{Vector{Float64}, Nothing}': solution vector (only if inverse hessian boosting enabled, else nothing)
-- 'f': objective function. Takes as input 'x::Vector{Float64}' and outputs evaluation 'f(x)' at point 'x'.
-- 'grad!': gradient of f. Input: mutable 'storage::Vector{Float64}' and 'x::Vector{Float64}', output: assigns to 'storage' gradient of 'f' at 'x'.
-- 'solver': CG-based algorithm to solve convex problem. Input: (f, grad!, region, x0; kwargs...), output: (x_opt, _)
-"""
-struct ConditionalGradients
-    solution::Union{Vector{Float64}, Nothing}
-    f
-    grad!
-    solver
-end
-
-
-"""
-Constructs objective function and gradient for CG-based oracle and returns oracle, f and grad!
+Returns coefficient_vector and loss found through CG-based algorithm fit to 'data'.
 
 # Arguments
-- 'oracle_type::String': string denoting which oracle to construct
-- 'data::Union{Matrix{Float64}, Matrix{Int64}}': data (O_evaluations)
-- 'labels::Union{Matrix{Float64}, Matrix{Int64}, Vector{Float64}, Vector{Int64}}': labels (term_evaluated)
-- 'lambda::Union{Float64, Int64}': regularization parameter (if applicable)
-- 'data_squared::Union{Matrix{Float64}, Matrix{Int64}}': squared data 
-- 'data_labels::Union{Matrix{Float64}, Vector{Float64}}': data' * labels 
+- 'oracle_type::String': type of CG-based algorithm (choice from 'CG', 'BCG', 'BPCG')
+- 'data::Union{Matrix{Float64}, Matrix{Int64}}': evaluations of O_terms 
+- 'labels::Union{Vector{Float64}, Vector{Int64}}': current border term evaluated
+- 'lambda::Union{Float64, Int64}': regularization parameter
+- 'data_squared::Union{Matrix{Float64}, Matrix{Int64}}': data' * data 
+- 'data_labels::Vector{Float64}': data' * labels
 - 'labels_squared::Float64': labels' * labels
-- 'data_squared_inverse::Union{Matrix{Float64}, Matrix{Int64}, Nothing}': inverse of data_squared (default is nothing)
+- 'data_squared_inverse::Union{Matrix{Float64}, Matrix{Int64}, Nothing}': inverse of data_squared for IHB, optional (default is nothing)
+- 'psi::Float64': vanishing parameter, optional (default is 0.1)
+- 'epsilon::Float64': solver accuracy, optional (default is 0.001)
+- 'tau::Float64': bound on coefficient_vector norm, optional (default is 1000.)
+- 'inverse_hessian_boost::String': whether or not to use IHB (choice from 'false', 'weak', 'full'), optional (default is 'false')
 
 # Returns
-- 'ConditionalGradients(solution, evaluate_function, evaluate_gradient!, solver)': struct keeping data and functions needed
-
+- 'coefficient_vector::Vector{Float64}': coefficient_vector minimizing L2Loss over L1Ball
+- 'loss::Float64': loss w.r.t. 'coefficient_vector'
 """
 function conditional_gradients(oracle_type::String, 
         data::Union{Matrix{Float64}, Matrix{Int64}}, 
-        labels::Union{Matrix{Float64}, Matrix{Int64}, Vector{Float64}, Vector{Int64}},
+        labels::Union{Vector{Float64}, Vector{Int64}},
         lambda::Union{Float64, Int64}, 
         data_squared::Union{Matrix{Float64}, Matrix{Int64}}, 
-        data_labels::Union{Matrix{Float64}, Vector{Float64}},
+        data_labels::Vector{Float64},
         labels_squared::Float64;
-        data_squared_inverse::Union{Matrix{Float64}, Matrix{Int64}, Nothing}=nothing)
-           
-    A = data
+        data_squared_inverse::Union{Matrix{Float64}, Matrix{Int64}, Nothing}=nothing,
+        psi::Float64=0.1,
+        epsilon::Float64=0.001,
+        tau::Float64=1000.,
+        inverse_hessian_boost::String="false")
+    
     m, n = size(data)
-    b = labels
-        
-    # A_squared
-    if data_squared != nothing
-        A_squared = 2/m * data_squared
-    else
-        A_squared = 2/m * A' * A
-    end
-        
-    if lambda != 0.
-        A_squared = A_squared + lambda * Matrix(I, n, n)
-    end
-        
-    # A_b
-    if data_labels != nothing
-        A_b = 2/m * data_labels
-    else
-        A_b = 2/m * (A' * b)
-    end
-        
-    # A_squared_inv
-    A_squared_inv = nothing
-    solution = nothing
-    if data_squared_inverse != nothing
-        A_squared_inv = m/2 * data_squared_inverse
-        solution = data_squared_inverse * data_labels
-        @assert lambda == 0. "Regularization not implemented for hessian-based algorithms."
-    end
-        
-    # b_squared
-    if labels_squared != nothing
-        b_squared = 2/m * labels_squared
-    else
-        b_squared = 2/m * b' * b
-    end
-        
-    """
-    objective function
-    """
-    function evaluate_function(x::Vector{Float64})
-        return ((1 / 2) * (x' * A_squared * x) + (A_b' * x) + (1 / 2) * b_squared)
-    end
-        
-    """
-    gradient of f
-    """
-    function evaluate_gradient!(storage::Vector{Float64}, x::Vector{Float64})
-        return storage .= A_squared * x + A_b
-    end
+    data_with_labels = hcat(data, labels)
+           
+    solution, f, grad! = L2Loss(data, labels, lambda, data_squared, data_labels, labels_squared; data_squared_inverse=data_squared_inverse)
         
     if oracle_type == "CG"
         oracle = frank_wolfe
@@ -100,8 +44,41 @@ function conditional_gradients(oracle_type::String,
     elseif oracle_type == "BPCG"
         oracle = FrankWolfe.blended_pairwise_conditional_gradient
     end
+    
+    region = FrankWolfe.LpNormLMO{1}(tau-1)
+    
+    if invese_hessian_boost in ["weak", "full"]
+        x0 = l1_projection(solution; radius=tau-1)
+    else
+        x0 = compute_extreme_point(region, zeros(Float64, n))
+    end
+    
+    if inverse_hessian_boost == "weak"
+        coefficient_vector, _ = oracle(f, grad!, region, x0; epsilon=epsilon)
+        coefficient_vector = vcat(coefficient_vector, [1])
+    
+        loss = 1/m * norm(data_with_labels * coefficient_vector, 2)^2
         
-    return ConditionalGradients(solution, evaluate_function, evaluate_gradient!, oracle)     
+        if loss <= psi
+            x0 = compute_extreme_point(region, zeros(Float64, n))
+            tmp_coefficient_vector, _ = oracle(f, grad!, region, x0; epsilon=epsilon)
+            tmp_coefficient_vector = vcat(tmp_coefficient_vector, [1])
+            
+            loss2 = 1/m * norm(data_with_labels * tmp_coefficient_vector, 2)^2
+            
+            if loss2 <= psi
+                loss = loss2
+                coefficient_vector = tmp_coefficient_vector
+            end
+                   
+        end
+    else    
+        coefficient_vector = oracle(f, grad!, region, x0; epsilon=epsilon)
+        coefficient_vector = vcat(coefficient_vector, [1])
+    
+        loss = 1/m * norm(data_with_labels * coefficient_vector, 2)^2
+    end        
+    return coefficient_vector, loss
 end
 
 

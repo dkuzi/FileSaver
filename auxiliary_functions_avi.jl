@@ -71,31 +71,3 @@ function l1_projection(x; radius=1.)
     w = reshape([max(v[i]-theta, 0) for i in 1:size(v, 1)], n, 1)
     return sign.(x) .* w
 end
-
-
-"""
-Calls ORACLE for computing coefficient vector
-
-# Arguments
-- 'oracle::String': Name of ORACLE to use
-- 'f': function to optimize
-- 'grad': gradient of f
-- 'feasible_region': feasible region over which to optimize for coefficient vector
-- 'initial_point::Vector{Float64}': starting point; must be in feasible_region
-
-# Returns
-- 'x_opt::Vector{Float64}': coefficient vector minimizing f over feasible_region
-"""
-function call_oracle(f, grad, feasible_region, initial_point::Vector{Float64}; oracle::String="BPCG")
-    if oracle == "CG"
-        x_opt, _ = frank_wolfe(f, grad, feasible_region, initial_point)
-    elseif oracle == "BCG"
-        x_opt, _ = blended_conditional_gradient(f, grad, feasible_region, initial_point)
-    elseif oracle == "BPCG"
-        x_opt, _ = FrankWolfe.blended_pairwise_conditional_gradient(f, grad, feasible_region, initial_point)
-    else
-        println("Oracle not implemented.")
-        return nothing
-    end
-    return x_opt
-end
