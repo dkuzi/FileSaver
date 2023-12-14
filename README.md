@@ -1,8 +1,5 @@
-```@meta
-EditURL = "examples/docs_0_basics.jl"
-```
 
-#AVI.jl
+# AVI.jl
 
 This package is a toolbox for polynomial feature extraction and transformation using the Oracle Approximate Vanishing Ideal Algorithm.
 
