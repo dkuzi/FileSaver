@@ -1,7 +1,20 @@
-# FileSaver
-Saving Files for cross use
+```@meta
+EditURL = "examples/docs_0_basics.jl"
+```
 
-This repository contains random bits of code belonging to current project.
+#AVI.jl
 
-Current project:
-Creating Julia-based [Oracle AVI](https://github.com/ZIB-IOL/cgavi/tree/f920b1843b2d6bec48e376ac3c59615a844467aa) code
+This package is a toolbox for polynomial feature extraction and transformation using the Oracle Approximate Vanishing Ideal Algorithm.
+
+##Overview
+
+The Oracle Approximate Vanishing Ideal (OAVI) algorithm was designed to compute the vanishing ideal of a set of points. Instead of adopting the then common approach of
+using singular value decomposition, OAVI finds vanishing polynomials by solving a convex optimization problem of the form
+```math
+\min_{\|x\|_1 \le \tau} \|Ax + b\|_2^2
+```
+
+---
+
+*This page was generated using [Literate.jl](https://github.com/fredrikekre/Literate.jl).*
+
