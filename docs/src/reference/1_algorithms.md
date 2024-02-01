@@ -2,14 +2,14 @@
 
 This section contains the main algorithms of the package.
 
-## $\texttt{OAVI}$
+## OAVI
 
 ```@autodocs
 Modules = [AVI]
 Pages = ["oracle_avi.jl"]
 ```
 
-## $\texttt{VCA}$
+## VCA
 
 ```@autodocs
 Modules = [AVI]
