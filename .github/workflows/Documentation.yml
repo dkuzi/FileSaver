@@ -17,7 +17,8 @@ jobs:
       - name: Install dependencies
         shell: julia --project=docs {0}
         run: |
-          # using Pkg
+          import Pkg
+          Pkg.add("Documenter")
           # Pkg.develop(PackageSpec(path=pwd()))
           # Pkg.instantiate()
       - name: Build and deploy
