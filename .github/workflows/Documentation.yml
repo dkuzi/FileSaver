@@ -12,14 +12,14 @@ jobs:
       - uses: actions/checkout@latest
       - uses: julia-actions/setup-julia@latest
         with:
-          # Build documentation on Julia 1.6
-          version: '1.6'
+          # Build documentation on Julia 1.9
+          version: '1.9'
       - name: Install dependencies
         shell: julia --project=docs {0}
         run: |
-          using Pkg
-          Pkg.develop(PackageSpec(path=pwd()))
-          Pkg.instantiate()
+          # using Pkg
+          # Pkg.develop(PackageSpec(path=pwd()))
+          # Pkg.instantiate()
       - name: Build and deploy
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # For authentication with GitHub Actions token
