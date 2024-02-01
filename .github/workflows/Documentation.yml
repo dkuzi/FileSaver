@@ -19,6 +19,7 @@ jobs:
         run: |
           import Pkg
           Pkg.add("Documenter")
+          Pkg.add(url="https://github.com/ZIB-IOL/AVI.jl.git")
           # Pkg.develop(PackageSpec(path=pwd()))
           # Pkg.instantiate()
       - name: Build and deploy
